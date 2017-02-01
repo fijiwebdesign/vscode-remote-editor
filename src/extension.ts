@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   })
 
-  let disposable = vscode.commands.registerCommand('extension.connectRemote', async function () {
+  let disposable = vscode.commands.registerCommand('remote.editor.connectRemote', async function () {
     statusBarItem.cycle(['⇅ working   ', '⇅ working.  ', '⇅ working.. ', '⇅ working...'])
 
     try {
