@@ -11,15 +11,20 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:remote.editor.connectRemote",
-    "workspaceContains:.remote"
+    "workspaceContains:.vscode/.remote-editor-project-placeholder",
+    "workspaceContains:.remote",
+    "*"
   ],
-  "main": "./out/src/extension",
+  "main": "./out/src/main.js",
   "contributes": {
     "commands": [
       {
-        "command": "remote.editor.connectRemote",
+        "command": "remoteeditor.sync",
         "title": "Connect to remote fs"
+      },
+      {
+        "command": "remoteeditor.createNewProject",
+        "title": "Create a new remote project"
       }
     ]
   },

@@ -1,3 +1,6 @@
+import * as vscode from 'vscode'
+const { window } = vscode
+
 interface statusIconOptions {
   position: string,
   priority: number,
@@ -6,10 +9,8 @@ interface statusIconOptions {
   text: string
 }
 
-import * as vscode from 'vscode'
-const { window } = vscode
-
-export const StatusIcon = class StatusIcon {
+const StatusIcon = class StatusIcon {
+  defaultText: string
   ref: vscode.StatusBarItem
   cycleInterval?: NodeJS.Timer
 
@@ -25,6 +26,7 @@ export const StatusIcon = class StatusIcon {
 
     if (options.text) {
       this.setText(options.text)
+      this.defaultText = options.text
     }
 
     if (options.tooltip) {
@@ -35,6 +37,21 @@ export const StatusIcon = class StatusIcon {
       this.setCommand(options.command)
     }
 
+    return this
+  }
+
+  startProcessing () {
+    this.cycle(['←', '↖', '↑', '↗', '→', '↘', '↓', '↙'], 200)
+
+    return this
+  }
+
+  stopProcessing () {
+    this.stopCycle()
+    if (this.defaultText) {
+      this.setText(this.defaultText)
+    }
+    
     return this
   }
 
@@ -86,3 +103,13 @@ export const StatusIcon = class StatusIcon {
     return this
   }
 }
+
+export const statusIcon =
+  new StatusIcon({
+    position: 'left',
+    priority: 0,
+    text: '↑',
+    tooltip: 'Sync down remote folder structure',
+    command: 'remoteeditor.sync' // todo: change to something that shows a dropdown
+  })
+  .show()
