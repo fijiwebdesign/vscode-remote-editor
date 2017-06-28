@@ -1,28 +1,24 @@
 import * as vscode from 'vscode'
 import * as fs from 'fs'
 import * as path from 'path'
+import { promisify } from '../util'
 
 /**
- * @function getDirectories
- * @summary returns an array of all directories inside a directory
+ * Returns an array of all directories inside a directory
+ *
+ * @async
  * @param {string} baseDir the directory to search in
- * @returns {Promise<string[]>} A promise which resolves to an array
- * of directory names
+ * @returns {string[]} An array of directory names
  */
-const getDirectories = function getDirectories (baseDir:string) : Promise<string[]> {
-  return new Promise((resolve, reject) => {
-    fs.readdir(baseDir, function onReadDir (err, fileList:string[]) : any {
-      if (err) {
-        return reject(err)
-      }
-
-      // Filter out any files, keeping only dirs
-      fileList = fileList.filter(function filterFiles (filePath) {
+const getDirectories = async function getDirectories (baseDir:string) {
+  return (await promisify(fs.readdir)(baseDir))
+    .filter((filePath) => {
+      try {
         return fs.statSync(path.join(baseDir, filePath)).isDirectory()
-      })
-      resolve(fileList)
+      } catch (ex) {
+        return false
+      }
     })
-  })
 }
 
 export {

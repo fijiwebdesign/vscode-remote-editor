@@ -1,18 +1,24 @@
 import * as vscode from 'vscode'
+import { LocalController } from './localController'
+import { RemoteController } from './remoteController'
 import * as commands from '../commands'
-import { localController } from './localController'
 
-const activate = function activate (context:vscode.ExtensionContext) : void {
+const activate = async function activate (context: vscode.ExtensionContext) {
   const disposables = []
-  // on activation, try load config
-  // if there is a placeholder config file found, create a blank config file and open it
-  localController.processPlaceholderFile()
 
-  // register any commands that need registering
-  disposables.push(vscode.commands.registerCommand('remoteeditor.createNewProject', commands.createNewProject))
 
-  // add any listeners that need adding
-  localController.handleChangesToConfigFile()
+  const localController = new LocalController(disposables)
+  await localController.performStartupTasks()
+
+  // const remoteController = new RemoteController(disposables, localController)
+  // TODO: move below into remote controller
+  if (await localController.configIsValid()) {
+    localController.getConfigJSON()
+  } else {
+    // TODO: add listeners to local controller
+  }
+
+  commands.register(disposables, localController/*, remoteController*/)
 
   context.subscriptions.concat(disposables)
 }

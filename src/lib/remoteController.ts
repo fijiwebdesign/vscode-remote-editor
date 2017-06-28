@@ -59,21 +59,16 @@ const RemoteController = class RemoteController extends EventEmitter {
         .connect(this.connectionInfo)
         .then(() => {
           this.isConnected = true
-          this.ssh
-            .requestSFTP()
-            .then((sftp) => {
-              this.sftp = sftp
-              this.hasSFTP = true
-              resolve()
-            })
-            .catch((err) => {
-              setTimeout(() => this.error(err), 10)
-              reject(`SFTP unavailable: ${err.message}`)
-            })
+          return this.ssh.requestSFTP()
+        })
+        .then((sftp) => {
+          this.sftp = sftp
+          this.hasSFTP = true
+          resolve()
         })
         .catch((err) => {
           setTimeout(() => this.error(err), 10)
-          reject(`Unable to connect: ${err.message}`)
+          reject(`SFTP unavailable / Unable to connect: ${err.message}`)
         })
     })
   }
@@ -166,35 +161,38 @@ const RemoteController = class RemoteController extends EventEmitter {
   }
 }
 
-let remoteController = null
-export const getRemoteController = function getRemoteController(displayErrors = true) {
-  return new Promise((resolve, reject) => {
-    if (
-      remoteController &&
-      typeof remoteController.getIsConnected === 'function' &&
-      remoteController.getIsConnected()
-    ) {
-      resolve(remoteController)
-    } else {
-      workspace.openTextDocument(path.join(workspace.rootPath, '/.remote'))
-        .then(function afterOpenTextDocument(configFile) {
-          const configString = configFile.getText()
-          const configJSON = JSON.parse(configString)
+// let remoteController = null
+// export const getRemoteController = function getRemoteController(displayErrors = true, configuration) {
+//   return new Promise((resolve, reject) => {
+//     if (
+//       remoteController &&
+//       typeof remoteController.getIsConnected === 'function' &&
+//       remoteController.getIsConnected()
+//     ) {
+//       resolve(remoteController)
+//     } else {
+//       workspace.openTextDocument(path.join(workspace.rootPath, '/.remote'))
+//         .then(function afterOpenTextDocument(configFile) {
+//           const configString = configFile.getText()
+//           const configJSON = JSON.parse(configString)
 
-          if (configJSON.privateKey) {
-            configJSON.privateKey = path.resolve(configJSON.privateKey)
-          }
+//           if (configJSON.privateKey) {
+//             configJSON.privateKey = path.resolve(configJSON.privateKey)
+//           }
 
-          return new RemoteController(configJSON)
-        })
-        .then((remoteController) => remoteController.connect())
-        .then(resolve,
-        (err: Error) => {
-          if (displayErrors) {
-            window.showErrorMessage(err.message)
-          }
-          reject(err)
-        })
-    }
-  })
+//           return new RemoteController(configJSON)
+//         })
+//         .then((remoteController) => remoteController.connect())
+//         .then(resolve, (err: Error) => {
+//           if (displayErrors) {
+//             window.showErrorMessage(err.message)
+//           }
+//           reject(err)
+//         })
+//     }
+//   })
+// }
+
+export {
+  RemoteController
 }

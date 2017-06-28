@@ -3,6 +3,6 @@ declare namespace LocalMethods {
     dir: string,
     currentDirLabel?: string,
     upperDirLabel?: string,
-    placeHolder?: string
+    placeholder?: string
   }
 }
