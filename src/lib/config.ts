@@ -66,7 +66,14 @@ const Config = class Config {
    * @returns {string} the root
    */
   getRootDir () {
-    return vscode.workspace.rootPath || './'
+    let { rootPath } = vscode.workspace
+    if (!rootPath) {
+      return './'
+    }
+
+    return rootPath[rootPath.length - 1] === '/'
+      ? rootPath
+      : rootPath + '/'
   }
 
   /**
@@ -75,7 +82,7 @@ const Config = class Config {
    * @returns {string} the config dir
    */
   getConfigDir () {
-    return this.getRootDir() + this.configDirName
+    return path.resolve(this.getRootDir(), this.configDirName)
   }
 
   /**
@@ -107,7 +114,7 @@ const Config = class Config {
         port: ''
       },
       remotePath: './',
-      ignore: ['.git', 'node_modules'],
+      ignore: ['.git', '.vscode', 'node_modules'],
       uploadOnSave: true,
       downloadOnOpen: true
     }

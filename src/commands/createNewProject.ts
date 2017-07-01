@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
 import * as mkdirp from 'mkdirp'
+import { promisify } from '../lib/util'
 import { config } from '../lib/config'
 
 /**
@@ -18,9 +19,9 @@ const createNewProject = function (localController) {
     }
 
     dirPath = path.join(dirPath, config.configDirName)
-    mkdirp(dirPath)
+    await promisify(mkdirp)(dirPath)
 
-    localController.createPlaceholderFile(path.join(dirPath, config.placeholderFileName))
+    localController.createPlaceholderFile(dirPath)
     vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.parse(dirPath), true)
   }
 }
