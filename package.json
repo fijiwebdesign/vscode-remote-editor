@@ -19,7 +19,7 @@
     "commands": [
       {
         "command": "remote.editor.connectRemote",
-        "title": "Connect to remote fs"
+        "title": "Connect remote SSH filesystem"
       }
     ]
   },

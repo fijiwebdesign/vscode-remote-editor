@@ -43,6 +43,7 @@ export const RemoteController = class RemoteController extends EventEmitter {
       this.ssh
         .connect(this.connectionInfo)
         .then(() => {
+          console.log('connected', this.connectionInfo)
           this.isConnected = true
           this.ssh
             .requestSFTP()
@@ -57,6 +58,7 @@ export const RemoteController = class RemoteController extends EventEmitter {
             })
         })
         .catch((err) => {
+          console.log('connection error', err)
           this.error(err)
           reject(err)
         })

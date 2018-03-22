@@ -16,11 +16,11 @@ export const LocalController = class LocalController extends EventEmitter {
     }
   }
 
-  createLocalFileStructure(fileTree) {
-    this.traverseFileTree(fileTree, this.rootPath)
+  createLocalRootFileTree(fileTree) {
+    this.createFileTree(fileTree, this.rootPath)
   }
 
-  async traverseFileTree(fileTree, path) {
+  async createFileTree(fileTree, path) {
     for (let key in fileTree) {
       const absFilePath = path + key
       if (fileTree[key] === null) {
@@ -31,14 +31,14 @@ export const LocalController = class LocalController extends EventEmitter {
       } else if (typeof fileTree[key] === 'object') {
         // is a folder
         mkdirp(absFilePath)
-        await this.traverseFileTree(fileTree[key], absFilePath + '/')
+        await this.createFileTree(fileTree[key], absFilePath + '/')
       }
     }
   }
 
   makeBlankFile(absolutePath: string) {
     return new Promise((resolve, reject) => {
-      fs.appendFile(absolutePath, '', (err, res) => {
+      fs.appendFile(absolutePath, '', (err) => {
         if (err) {
           this.error(err)
           reject(err)
