@@ -1,6 +1,6 @@
 'use strict';
 
-import * as vscode from 'vscode';
+import * as vscode from 'vscode'
 import { StatusIcon } from './statusIcon'
 import { RemoteController } from './remoteController'
 import { LocalController } from './localController'
@@ -37,65 +37,77 @@ async function getRemoteController() {
   return remoteController
 }
 
-async function connectRemoteEditor() {
-  getStatusBarItem().cycle(createCycleDots('⇅ ' + lang.connecting))
-
-  try {
-    const remoteController = await getRemoteController()
-    await remoteController.connect()
-      .then(async () => {
-
-        getStatusBarItem()
-          .stopCycle()
-          .cycle(createCycleDots('⇅ ' + lang.syncing))
-
-        const filetree = await remoteController.getFileTree()
-
-        const localController = new LocalController()
-        localController.createLocalRootFileTree(filetree)
-
-        getStatusBarItem().stopCycle().setText('⇅ done')
-
-        setTimeout(function () {
-          getStatusBarItem().setText('⇅')
-        }, 3000)
-      })
-  } catch (ex) {
-    console.error(ex)
-    /* TODO: Error! */
-  }
+function isDocIgnored(path: string) {
+  const ignoredDocs = [
+    /.remote$/,
+    ///Code\/User\/settings.json$/
+  ]
+  return ignoredDocs.map(doc => path.match(doc)).filter(match => match).length > 0
 }
 
-function createCycleDots(msg) {
-  return [msg + '   ', msg + '.  ', msg + '.. ', msg + '...']
+function isDocInWorkspace(path: string) {
+  console.log('isDocInWorkspace', path, vscode.workspace.rootPath)
+  return path.indexOf(vscode.workspace.rootPath) === 0
 }
 
 export function activate(context: vscode.ExtensionContext) {
 
-  getStatusBarItem()
+  const statusBarItem = getStatusBarItem()
 
   vscode.workspace.onDidOpenTextDocument(async function onDocOpen(doc) {
-    console.log('open doc', doc)
-    if (!doc.isDirty) {
+    const path = doc.fileName
+    if (!doc.isDirty && !isDocIgnored(path) && isDocInWorkspace(path)) {
+      console.log('open doc', doc)
+      statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
       const remoteController = await getRemoteController()
-      remoteController.getFileContents(doc.fileName)
+      if (!remoteController.isConnected) {
+        await remoteController.connect()
+      }
+      await remoteController.getFileContents(path)
+      statusBarItem.stopCycle().setText('⇅')
     }
   })
 
   vscode.workspace.onDidSaveTextDocument(async function onDocSave(doc) {
-    console.log('save doc', doc)
-    if (!doc.isDirty) {
+    const path = doc.fileName
+    if (!doc.isDirty && !isDocIgnored(path)&& isDocInWorkspace(path)) {
+      console.log('save doc', doc)
+      statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
       const remoteController = await getRemoteController()
-      remoteController.putFileContents(doc.fileName)
+      if (!remoteController.isConnected) {
+        await remoteController.connect()
+      }
+      await remoteController.putFileContents(path)
+      statusBarItem.stopCycle().setText('⇅')
     }
   })
+
+  async function connectRemoteEditor() {
+    statusBarItem.stopCycle().cycleDots('⇅ ' + lang.connecting)
+  
+    try {
+      const remoteController = await getRemoteController()
+      await remoteController.connect()
+  
+      statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
+  
+      const filetree = await remoteController.getFileTree()
+      const localController = new LocalController()
+      localController.createLocalRootFileTree(filetree)
+  
+      statusBarItem.stopCycle().setText('⇅ ' + lang.done).setTextWait('⇅', 3000)
+  
+    } catch (error) {
+      console.error(error)
+      return vscode.window.showErrorMessage(lang.errorMsg.replace('%s', error.message))
+    }
+  }
 
   context.subscriptions.push(
     vscode.commands.registerCommand('remote.editor.connectRemote', connectRemoteEditor)
   )
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {
 
 }

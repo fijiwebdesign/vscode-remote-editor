@@ -12,6 +12,7 @@ const { window } = vscode
 export const StatusIcon = class StatusIcon {
   ref: vscode.StatusBarItem
   cycleInterval?: NodeJS.Timer
+  waitInterval
 
   constructor(options: statusIconOptions) {
     let pos
@@ -44,6 +45,13 @@ export const StatusIcon = class StatusIcon {
     return this
   }
 
+  setTextWait(text: string, timeout: number = 1000) {
+    clearInterval(this.waitInterval)
+    this.waitInterval = setTimeout(() => this.setText(text), timeout)
+
+    return this
+  }
+
   setTooltip(tooltip: string) {
     this.ref.tooltip = tooltip
 
@@ -64,6 +72,12 @@ export const StatusIcon = class StatusIcon {
         idx = 0
       }
     }, interval)
+
+    return this
+  }
+
+  cycleDots(msg: string, interval: number = 700) {
+    this.cycle([msg + '   ', msg + '.  ', msg + '.. ', msg + '...'])
 
     return this
   }
