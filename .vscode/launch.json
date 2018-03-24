@@ -11,7 +11,59 @@
             "stopOnEntry": false,
             "sourceMaps": true,
             "outFiles": [ "${workspaceRoot}/out/src/**/*.js" ],
-            "preLaunchTask": "npm"
+            "preLaunchTask": "npm",
+            "env": {
+                "NODE_ENV": "debug",
+                "DEBUG": "*"
+            }
+        },
+        {
+            "name": "Launch Extension ts-node",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                //"--inspect-brk=5858",
+                "-r",
+                "ts-node/register",
+                "--extensionDevelopmentPath=${workspaceRoot}"
+            ],
+            "stopOnEntry": false,
+            "sourceMaps": false,
+            "env": {
+                "NODE_ENV": "debug",
+                "DEBUG": "*"
+            },
+            "port": 5858
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch via Node",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "--inspect-brk=5858", 
+                "--",
+                "${execPath}",
+                "--extensionDevelopmentPath=${workspaceRoot}"
+            ],
+            "env": {
+                "NODE_ENV": "debug",
+                "DEBUG": "*",
+                "runtimeExecutable": "${execPath}"
+            },
+            "port": 5858
+        },
+        {
+            "name": "Current TS File",
+            "type": "node",
+            "request": "launch",
+            "args": ["${relativeFile}"],
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register", "-r", "ts-node/register"],
+            "sourceMaps": true,
+            "cwd": "${workspaceRoot}",
+            "protocol": "inspector",
         },
         {
             "name": "Launch Tests",

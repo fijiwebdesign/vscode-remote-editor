@@ -1,9 +1,9 @@
 {
-  "name": "remote-editor",
-  "displayName": "remote-editor",
-  "description": "Edit remote files as though they were local!",
+  "name": "vscode-remote-editor",
+  "displayName": "VSCode Remote SSH Editor Extension",
+  "description": "Edit remote files via SSH",
   "version": "0.0.1",
-  "publisher": "carlevans",
+  "publisher": "seedess",
   "engines": {
     "vscode": "^1.5.0"
   },
@@ -19,7 +19,11 @@
     "commands": [
       {
         "command": "remote.editor.connectRemote",
-        "title": "Connect remote SSH filesystem"
+        "title": "Remote Editor > Connect remote SSH"
+      },
+      {
+        "command": "remote.editor.disconnectRemote",
+        "title": "Remote Editor > Disconnect remote SSH"
       }
     ]
   },
@@ -27,18 +31,21 @@
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "node ./node_modules/vscode/bin/test"
+    "test": "node ./node_modules/vscode/bin/test",
+    "debug": "node --debug-brk -- $runtimeExecutable "
   },
   "dependencies": {
+    "debug": "^3.1.0",
     "mkdirp": "^0.5.1",
     "node-ssh": "^4.0.1"
   },
   "devDependencies": {
-    "typescript": "^2.0.3",
-    "vscode": "^1.0.0",
-    "node-ssh": "^4.0.1",
-    "mocha": "^2.3.3",
+    "@types/mocha": "^2.2.32",
     "@types/node": "^6.0.40",
-    "@types/mocha": "^2.2.32"
+    "mocha": "^2.3.3",
+    "node-ssh": "^4.0.1",
+    "ts-node": "^5.0.1",
+    "typescript": "^2.0.3",
+    "vscode": "^1.0.0"
   }
 }

@@ -6,5 +6,6 @@ export const createRemoteEditor =
 export const syncFolderStructure = 'Sync down remote folder structure'
 export const syncing = 'syncing'
 export const connecting = 'connecting'
+export const disconnecting = 'disconnecting'
 export const done = 'done'
 export const errorMsg = 'An error occurred: %s'

@@ -9,15 +9,21 @@ interface connectionInfo {
 import * as SSH from 'node-ssh'
 import * as EventEmitter from 'events'
 import { workspace } from 'vscode'
+import * as Debug from 'debug'
+
+const debug = Debug('remote-editor:remoteController')
 
 export const RemoteController = class RemoteController extends EventEmitter {
   connectionInfo: connectionInfo
   basePath: string
   ignore: string[]
   ssh: SSH
-  isConnected: boolean
   sftp: any
   hasSFTP: boolean
+
+  get isConnected(): boolean {
+      return this.ssh.connection
+  }
 
   constructor(config) {
     super()
@@ -32,7 +38,6 @@ export const RemoteController = class RemoteController extends EventEmitter {
     this.ignore = mappedIgnores || []
 
     this.ssh = new SSH
-    this.isConnected = false
     this.hasSFTP = false
 
     return this
@@ -43,9 +48,8 @@ export const RemoteController = class RemoteController extends EventEmitter {
       this.ssh
         .connect(this.connectionInfo)
         .then(() => {
-          console.log('connected', this.connectionInfo)
-          this.isConnected = true
-          this.ssh
+          debug('connected', this.connectionInfo)
+          return this.ssh
             .requestSFTP()
             .then((sftp) => {
               this.sftp = sftp
@@ -58,11 +62,17 @@ export const RemoteController = class RemoteController extends EventEmitter {
             })
         })
         .catch((err) => {
-          console.log('connection error', err)
+          debug('connection error', err)
           this.error(err)
           reject(err)
         })
     })
+  }
+
+  disconnect() {
+    if (this.ssh.connection) {
+      this.ssh.dispose()
+    }
   }
 
   error(error: Error) {
@@ -103,8 +113,8 @@ export const RemoteController = class RemoteController extends EventEmitter {
     const levelRes = {}
 
     for (let i = 0; i < filelist.length; i++) {
-      let shouldIgnore = this.ignore.indexOf(path + filelist[i].filename) !== -1
-      // console.log(`is ${path + filelist[i].filename} in the ignore list? ${shouldIgnore ? 'yes' : 'no'}`)
+      let shouldIgnore = this.ignore && this.ignore.indexOf(path + filelist[i].filename) !== -1
+      // debug(`is ${path + filelist[i].filename} in the ignore list? ${shouldIgnore ? 'yes' : 'no'}`)
       if (shouldIgnore) {
         continue
       } else {

@@ -1,11 +1,19 @@
 'use strict';
 
+const isDebug = process.env.NODE_ENV === 'debug'
+const isDev = process.env.NODE_ENV === 'development' || isDebug
+
 import * as vscode from 'vscode'
 import { StatusIcon } from './statusIcon'
 import { RemoteController } from './remoteController'
 import { LocalController } from './localController'
 import * as fs from 'fs'
-import * as lang from './int8n/en'
+import * as lang from './lang/en'
+import * as Debug from 'debug'
+
+const debug = isDev ? console.log.bind(console) : () => {} //Debug('remote-editor:extension')
+
+debug('DEBUG', process.env.DEBUG)
 
 //const extensionConfig = vscode.workspace.getConfiguration('remote.editor')
 let statusBarItem
@@ -39,14 +47,13 @@ async function getRemoteController() {
 
 function isDocIgnored(path: string) {
   const ignoredDocs = [
-    /.remote$/,
-    ///Code\/User\/settings.json$/
+    /.remote$/
   ]
-  return ignoredDocs.map(doc => path.match(doc)).filter(match => match).length > 0
+  return ignoredDocs.map(pattern => pattern.test(path)).filter(result => result === true).length
 }
 
 function isDocInWorkspace(path: string) {
-  console.log('isDocInWorkspace', path, vscode.workspace.rootPath)
+  debug('isDocInWorkspace', path, vscode.workspace.rootPath)
   return path.indexOf(vscode.workspace.rootPath) === 0
 }
 
@@ -57,13 +64,17 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidOpenTextDocument(async function onDocOpen(doc) {
     const path = doc.fileName
     if (!doc.isDirty && !isDocIgnored(path) && isDocInWorkspace(path)) {
-      console.log('open doc', doc)
+      debug('open doc', doc)
       statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
-      const remoteController = await getRemoteController()
-      if (!remoteController.isConnected) {
-        await remoteController.connect()
+      try {
+        const remoteController = await getRemoteController()
+        if (!remoteController.isConnected) {
+          await remoteController.connect()
+        }
+        await remoteController.getFileContents(path)
+      } catch(e) {
+        debug('Open document error', e)
       }
-      await remoteController.getFileContents(path)
       statusBarItem.stopCycle().setText('⇅')
     }
   })
@@ -71,7 +82,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidSaveTextDocument(async function onDocSave(doc) {
     const path = doc.fileName
     if (!doc.isDirty && !isDocIgnored(path)&& isDocInWorkspace(path)) {
-      console.log('save doc', doc)
+      debug('save doc', doc)
       statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
       const remoteController = await getRemoteController()
       if (!remoteController.isConnected) {
@@ -83,14 +94,19 @@ export function activate(context: vscode.ExtensionContext) {
   })
 
   async function connectRemoteEditor() {
-    statusBarItem.stopCycle().cycleDots('⇅ ' + lang.connecting)
-  
+
+    if (!fs.existsSync(vscode.workspace.rootPath + '/.remote')) {
+      return vscode.window.showErrorMessage(lang.createRemoteEditor)
+    }
+
     try {
+      statusBarItem.stopCycle().cycleDots('⇅ ' + lang.connecting)
+
       const remoteController = await getRemoteController()
       await remoteController.connect()
-  
+
       statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
-  
+
       const filetree = await remoteController.getFileTree()
       const localController = new LocalController()
       localController.createLocalRootFileTree(filetree)
@@ -103,12 +119,37 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
+  async function disconnectRemoteEditor() {
+    try {
+      if (remoteController && remoteController.isConnected) {
+        statusBarItem.stopCycle().cycleDots('⇅ ' + lang.disconnecting)
+        await remoteController.disconnect()
+        statusBarItem.stopCycle().setText('⇅ ' + lang.done).setTextWait('⇅', 3000)
+      }
+    } catch (error) {
+      console.error(error)
+      return vscode.window.showErrorMessage(lang.errorMsg.replace('%s', error.message))
+    }
+  }
+
   context.subscriptions.push(
     vscode.commands.registerCommand('remote.editor.connectRemote', connectRemoteEditor)
   )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('remote.editor.disconnectRemote', disconnectRemoteEditor)
+  )
 }
 
-export function deactivate() {
-
+export async function deactivate() {
+  if (remoteController && remoteController.isConnected) {
+    await remoteController.disconnect()
+  }
 }
 
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  promise.catch(() => {
+    if (isDev) {
+      debug('Promise rejection unhandled', reason)
+    }
+  })
+})
