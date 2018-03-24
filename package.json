@@ -47,5 +47,9 @@
     "ts-node": "^5.0.1",
     "typescript": "^2.0.3",
     "vscode": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fijiwebdesign/vscode-remote-editor"
   }
 }
