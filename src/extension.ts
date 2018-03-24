@@ -13,8 +13,6 @@ import * as Debug from 'debug'
 
 const debug = isDev ? console.log.bind(console) : () => {} //Debug('remote-editor:extension')
 
-debug('DEBUG', process.env.DEBUG)
-
 //const extensionConfig = vscode.workspace.getConfiguration('remote.editor')
 let statusBarItem
 let remoteController
@@ -42,6 +40,7 @@ async function getRemoteController() {
   const configString = configFile.getText()
   const configJSON = JSON.parse(configString)
   remoteController =  new RemoteController(configJSON)
+  remoteController.config = configJSON
   return remoteController
 }
 
@@ -57,9 +56,13 @@ function isDocInWorkspace(path: string) {
   return path.indexOf(vscode.workspace.rootPath) === 0
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
   const statusBarItem = getStatusBarItem()
+
+  await getRemoteController()
+  if (remoteController.config.autoConnect) await connectRemoteEditor()
+  
 
   vscode.workspace.onDidOpenTextDocument(async function onDocOpen(doc) {
     const path = doc.fileName
@@ -102,20 +105,30 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       statusBarItem.stopCycle().cycleDots('⇅ ' + lang.connecting)
 
-      const remoteController = await getRemoteController()
-      await remoteController.connect()
+      //const remoteController = await getRemoteController()
+      debug('Connecting...')
+      remoteController.connect()
+        .then(() => {
+          statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
 
-      statusBarItem.stopCycle().cycleDots('⇅ ' + lang.syncing)
+          return remoteController.getFileTree()
+            .then(filetree => {
+              const localController = new LocalController()
+              localController.createLocalRootFileTree(filetree)
 
-      const filetree = await remoteController.getFileTree()
-      const localController = new LocalController()
-      localController.createLocalRootFileTree(filetree)
-  
-      statusBarItem.stopCycle().setText('⇅ ' + lang.done).setTextWait('⇅', 3000)
-  
+              statusBarItem.stopCycle().setText('⇅ ' + lang.done).setTextWait('⇅', 5000)
+            })
+            .catch(error => console.log(error))
+        })
+        .catch(error => {
+          console.error('Error connecting', error)
+          vscode.window.showErrorMessage(lang.errorMsg.replace('%s', error.message))
+          //throw new Error(lang.errorConnectionFailed)
+        })
     } catch (error) {
       console.error(error)
-      return vscode.window.showErrorMessage(lang.errorMsg.replace('%s', error.message))
+      statusBarItem.stopCycle().setText('⇅ ' + lang.error).setTextWait('⇅', 5000)
+      vscode.window.showErrorMessage(lang.errorMsg.replace('%s', error.message))
     }
   }
 
