@@ -1,6 +1,8 @@
 # vscode-remote-editor
 
-Visual Studio Remote Editor 
+This extension is no longer maintained. I would suggest using https://github.com/liximomo/vscode-sftp as it's more mature and achieves the same as this package.  I don't have the time to support this package anymore. 
+
+## Visual Studio Remote Editor 
 
 Allows editing remote files over SSH. 
 Replicates the remote file structure locally and downloads, saves files on open, save in vscode. 
